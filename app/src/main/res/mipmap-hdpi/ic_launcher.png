@@ -1,0 +1,100 @@
+package ru.job4j.todolist;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.provider.MediaStore;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Objects;
+
+import ru.job4j.todolist.store.FileStore;
+import ru.job4j.todolist.store.IStore;
+
+public class CreateOrEditTaskActivity extends AppCompatActivity {
+    private IStore store;
+    private int id = -1;
+    private EditText mName;
+    private EditText mDescription;
+    private CheckBox mDone;
+    private ImageView mPhoto;
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    protected void onCreate(@Nullable Bundle state) {
+        super.onCreate(state);
+        setContentView(R.layout.activity_creat_or_edit_task);
+        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        mDone = findViewById(R.id.create_edit_task_done);
+        this.store = FileStore.getInstance(this);
+        mPhoto = findViewById(R.id.photo);
+        mPhoto.setOnClickListener(this::clickOnPhoto);
+        if(getIntent().hasExtra("id for edit")) {
+            id = getIntent().getIntExtra("id for edit", -1);
+            Task task = store.findTaskByID(id);
+            mDone.setVisibility(View.VISIBLE);
+            mName = findViewById(R.id.create_edit_task_name);
+            mName.setText(task.getName());
+            mName.setHint(task.getName());
+            mDescription = findViewById(R.id.create_edit_task_description);
+            mDescription.setText(task.getDesc());
+            mDescription.setHint(task.getDesc());
+            mDone.setChecked(task.getClosed() != null);
+
+        }
+    }
+
+    private void clickOnPhoto(View view) {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(intent, REQUEST_IMAGE_CAPTURE);
+        }
+    }
+
+
+    @Override
+    public boolean onCreatePanelMenu(int featureId, @NonNull Menu menu) {
+        return super.onCreatePanelMenu(featureId, menu);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.activity_creat_or_edit_task, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.create_edit_confirm:
+                if(mName.getText().toString().trim().length() < 1) {
+                    Toast.makeText(
+                            getApplicationContext(), R.string.task_need_name,
+                            Toast.LENGTH_SHORT
+                    ).show();
+                    return true;
+                }
+                if (id == -1) {
+                    createNewTask();
+                    setAnswerPositionResult(store.getTasks().size()-1,"add");
+                } else {
+                    editTask();
+       
