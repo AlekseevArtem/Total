@@ -1,9 +1,13 @@
 package ru.job4j.total;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.StrictMode;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -13,6 +17,7 @@ import android.widget.Button;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -21,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class MainActivity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
@@ -32,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.list_of_files);
         mRecyclerView = findViewById(R.id.list_of_files);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        mDirectory = new File(getExternalFilesDir(null).getPath());
+        mDirectory = new File(Objects.requireNonNull(getExternalFilesDir(null)).getPath());
         updateUI(mDirectory);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
@@ -89,8 +95,7 @@ public class MainActivity extends AppCompatActivity {
                         new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
                 return false;
             }
-        }
-        else return true;
+        } else return true;
     }
 
     private void updateUI(File directory) {
@@ -113,12 +118,31 @@ public class MainActivity extends AppCompatActivity {
             mFile = file;
             mNameButton.setText(mFile.getName());
             if(mFile.isDirectory()) {
-                mNameButton.setOnClickListener(this::clickOnNameButton);
+                mNameButton.setOnClickListener(this::clickOnDirectory);
+            } else if (getExtensionByStringHandling(mFile.getName()).isPresent() &&
+                    getExtensionByStringHandling(mFile.getName()).get().equals("mp3")) {
+                mNameButton.setOnClickListener(this::clickOnMP3);
             }
         }
 
-        private void clickOnNameButton(View view){
+        public Optional<String> getExtensionByStringHandling(String filename) {
+            return Optional.ofNullable(filename)
+                    .filter(f -> f.contains("."))
+                    .map(f -> f.substring(filename.lastIndexOf(".") + 1));
+        }
+
+        private void clickOnDirectory(View view){
             rewriteDirectory(mFile);
+        }
+
+        private void clickOnMP3(View view){
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                Uri photoURI = FileProvider.getUriForFile(getApplicationContext(), getApplicationContext().getPackageName() + ".provider", mFile);
+                intent.setDataAndType(photoURI, "audio/mp3");
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(intent);
+            }
         }
     }
 
