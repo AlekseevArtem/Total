@@ -6,8 +6,6 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.StrictMode;
-import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -29,15 +27,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class MainActivity extends AppCompatActivity {
-    private RecyclerView mRecyclerView;
+    private RecyclerView mViewsForFiles;
     private File mDirectory;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.list_of_files);
-        mRecyclerView = findViewById(R.id.list_of_files);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        mViewsForFiles = findViewById(R.id.list_of_files);
+        mViewsForFiles.setLayoutManager(new LinearLayoutManager(this));
         mDirectory = new File(Objects.requireNonNull(getExternalFilesDir(null)).getPath());
         updateUI(mDirectory);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
@@ -102,14 +100,14 @@ public class MainActivity extends AppCompatActivity {
         setTitle(directory.getName());
         File[] files = directory.listFiles();
         List<File> allFiles = new ArrayList<>(Arrays.asList(files));
-        mRecyclerView.setAdapter(new MediaFilesAdapter(allFiles));
+        mViewsForFiles.setAdapter(new FilesAdapter(allFiles));
     }
 
-    private class MediaFilesHolder extends RecyclerView.ViewHolder {
+    private class FilesHolder extends RecyclerView.ViewHolder {
         private Button mNameButton;
         private File mFile;
 
-        public MediaFilesHolder(LayoutInflater inflater, ViewGroup parent) {
+        public FilesHolder(LayoutInflater inflater, ViewGroup parent) {
             super(inflater.inflate(R.layout.list_item_file, parent,false));
             mNameButton = itemView.findViewById(R.id.media_name);
         }
@@ -146,21 +144,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class MediaFilesAdapter extends RecyclerView.Adapter<MediaFilesHolder> {
+    private class FilesAdapter extends RecyclerView.Adapter<FilesHolder> {
         private List<File> mFiles;
 
-        public MediaFilesAdapter(List<File> crimes) {
+        public FilesAdapter(List<File> crimes) {
             this.mFiles = crimes;
         }
 
         @NonNull
         @Override
-        public MediaFilesHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return new MediaFilesHolder(LayoutInflater.from(getApplicationContext()), parent);
+        public FilesHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            return new FilesHolder(LayoutInflater.from(getApplicationContext()), parent);
         }
 
         @Override
-        public void onBindViewHolder(@NonNull MediaFilesHolder holder, int position) {
+        public void onBindViewHolder(@NonNull FilesHolder holder, int position) {
             holder.bind(mFiles.get(position));
         }
 
